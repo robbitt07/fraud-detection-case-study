@@ -4,15 +4,26 @@ var IndexRoute = ReactRouter.IndexRoute;
 var Link = ReactRouter.Link;
 var hashHistory = ReactRouter.hashHistory;
 
+var headerStyle = {
+  'position': 'fixed',
+  'top': '0px',
+  'left': 'auto',
+  'zIndex': '10'
+}
 
 var Header = React.createClass({
   render: function() {
     return (
-      <div className="ui borderless main menu fixed">
+      <div className="ui borderless large menu fixed" style={headerStyle}>
         <div className="ui text container">
-          <div href="/" className="header item">
-            <i className="ban icon"></i>
-            No Fraud Zone
+          <div className="header item">
+            <Link to="/">
+              <i className="ban icon"></i>
+              No Fraud Zone
+            </Link>
+          </div>
+          <div className="item">
+            <Link className="black" to="/about">What is this?</Link>
           </div>
         </div>
       </div>
@@ -25,16 +36,13 @@ var Feed = React.createClass({
       loadedOnce: false
     }
   },
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.data.length > 1) {
-      this.setState({
-        loadedOnce: true
-      })
-    }
+  approve(i) {
+    console.log('i', i)
+    this.props.removeFromData(i)
   },
   inspect() {
-    console.log('inspecting')
-    this.props.setLoading()
+    //console.log('inspecting')
+    //this.props.setLoading()
   },
   render: function() {
     var that = this
@@ -48,7 +56,7 @@ var Feed = React.createClass({
         var label = (<a className="ui red ribbon label">Action Required: High Chance of Fraud</a>)
       }
       return (
-        <div key={i} id={i === 0 ? 'first_card' : ''} className="ui card">
+        <div key={i} id={'card_' + i} className="ui link card">
           <div className="content">
             {label}
 
@@ -61,8 +69,8 @@ var Feed = React.createClass({
           </div>
           <div className="extra content">
             <div className="ui two buttons">
-              <div className={fraud_p >= .1 ? "ui basic green disabled button" : "ui basic green button"}>Approve</div>
-              <div onClick={that.inspect} className="ui basic blue button"><Link to={'/data/' + item.object_id}>Inspect</Link></div>
+              <div onClick={that.approve.bind(null, i)} className={fraud_p >= .1 ? "ui inverted green disabled button" : "ui inverted green button"}>Approve</div>
+              <Link to={'/data/' + item.object_id}><div className={that.props.loading ? "ui inverted loading blue button" : "ui inverted blue button"}>Inspect</div></Link>
             </div>
           </div>
         </div>
@@ -71,8 +79,13 @@ var Feed = React.createClass({
 
     return (
       <div className="ui large middle aligned animated list">
-
         <div className="ui cards">
+          <h2 className="ui header">
+            <i className="list icon"></i>
+            <div className="content">
+              Feed
+            </div>
+          </h2>
           {feed}
         </div>
       </div>
@@ -86,6 +99,13 @@ var Dash = React.createClass({
       data: [],
       newData: {}
     }
+  },
+  removeFromData(i) {
+    var copy = this.state.data 
+    copy.splice(i, 1);
+    this.setState({
+      data: copy
+    })
   },
   componentDidMount() {
     var socket = io.connect('http://localhost:8080');
@@ -119,17 +139,18 @@ var Dash = React.createClass({
     var children = React.Children.map(this.props.children, function (child) {
       return React.cloneElement(child, {
         data: that.state.data,
-        setLoading: that.props.setLoading
+        setLoading: that.props.setLoading,
+        loading: that.props.loading
       })
     })
     return (
-      <div className="ui 2 column internally celled grid stackable container segment">
+      <div className="ui main 2 column internally celled grid stackable container" style={{"paddingTop": "4rem"}}>
         
-        <div className="six wide column">
-          <Feed data={this.state.data} newData={this.state.newData} setLoading={this.props.setLoading}/>
+        <div className="four wide column">
+          <Feed data={this.state.data} newData={this.state.newData} removeFromData={that.removeFromData} setLoading={this.props.setLoading}/>
         </div>
 
-        <div className="six wide column">
+        <div className="ten wide column">
           {children}
         </div>
         
@@ -152,7 +173,8 @@ var Home = React.createClass({
     var that = this
     var children = React.Children.map(this.props.children, function (child) {
       return React.cloneElement(child, {
-        setLoading: that.setLoading
+        setLoading: that.setLoading,
+        loading: that.state.loading
       })
     })
     return (
@@ -172,7 +194,7 @@ var Analytics = React.createClass({
   getInitialState: function() {
     return {
       objID: '',
-      matchingObj: [],
+      matchingObj: {},
       htmlString: ''
     }
   },
@@ -184,6 +206,9 @@ var Analytics = React.createClass({
       return item.object_id.toString() === objID
     })
     console.log('matching', matchingObj)
+    this.setState({
+      matchingObj: matchingObj[0]
+    })
     var that = this
     $.ajax({
       type: "POST",
@@ -195,22 +220,39 @@ var Analytics = React.createClass({
           htmlString: resp.html
         })
         window.eval(resp.script)
-        that.props.setLoading();
         
 
       }
     })
 
   },
+  componentDidMount() {
+    //this.props.setLoading()
+  },
   render: function() {
     return (
-      <div className="content" dangerouslySetInnerHTML={{__html: this.state.htmlString}}></div>
+      <div className="ui center aligned container">
+        <h2>{this.state.matchingObj.name}</h2>
+        <div className="content" dangerouslySetInnerHTML={{__html: this.state.htmlString}}></div>
+      </div>
       )
 
     
   }
 })
 
+var About = React.createClass({
+  render: function() {
+    return (
+      <div className="ui raised very padded text container segment">
+        <h1 className="ui header">What is this?</h1>
+        <h2 className="ui header">NoFraud.Zone is a analytics dashboard for fradulent events.</h2>
+        <p></p>
+        <p></p>
+      </div>
+      )
+  }
+})
 var App = React.createClass({
   render: function() {
     return (
@@ -219,6 +261,7 @@ var App = React.createClass({
           <Route path="/" component={Dash}>
             <Route path="/data/:object_id" component={Analytics}/>
           </Route>
+          <Route path="/about" component={About} />
         </Route>
       </Router>
       )

@@ -68,7 +68,7 @@ def score():
 @app.route('/fetch_all', methods=['GET'])
 def fetch_all():
   coll = db['data_with_predicted_labels']
-  data = coll.find()
+  data = coll.find().limit(10)
   results = []
   for i in data:
     results.append(i)

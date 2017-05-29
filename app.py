@@ -40,7 +40,7 @@ def index():
 @app.route('/components/<path:filename>')
 def serve_static(filename):
     root_dir = os.path.dirname(os.getcwd())
-    return send_from_directory(os.path.join(root_dir, 'fraud-detection-case-study', 'api', 'components'), filename)
+    return send_from_directory(os.path.join(root_dir, 'fraud-detection-case-study', 'components'), filename)
 
 @app.route('/predict', methods=['POST'])
 def predict():

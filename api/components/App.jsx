@@ -228,6 +228,12 @@ var Analytics = React.createClass({
   },
   componentDidMount() {
     //this.props.setLoading()
+    $('.bk-root')
+      .sticky({
+        context: '.four.wide.column',
+        pushing: true
+      })
+    ;
   },
   render: function() {
     return (

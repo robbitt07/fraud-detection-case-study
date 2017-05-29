@@ -116,7 +116,7 @@ def get_graph_html():
   new_point['payout_type_MISSING'] = 1 if new_point['payout_type'] == 'CHECK' else 0
   print('new_point', new_point['event_created_to_end'])
   html = badass_plot(new_point, new_df)
-  soup = BeautifulSoup(html)
+  soup = BeautifulSoup(html, 'html.parser')
   body = soup.find('body')
   script_txt = body.script.get_text()
 
